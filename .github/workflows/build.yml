@@ -16,6 +16,8 @@ jobs:
         fetch-depth: 0 # Full history needed for 'git describe' versioning
     - name: Ensure git tags exist
       run: |
+        git config --global user.email "ci@ardour.org"
+        git config --global user.name "CI"
         if [ -z "$(git tag)" ]; then
           echo "No tags found, creating a dummy tag for versioning"
           git tag -a 7.0-dummy -m "Dummy tag for CI versioning"
