@@ -55,7 +55,26 @@ jobs:
           libcairomm-1.0-dev \
           libsigc++-2.0-dev \
           libfluidsynth-dev \
-          libudev-dev
+          libudev-dev \
+          lv2-dev \
+          libserd-dev \
+          libsord-dev \
+          libsratom-dev \
+          liblilv-dev \
+          libsuil-dev \
+          libdbus-1-dev \
+          libflac-dev \
+          libfontconfig1-dev \
+          libhidapi-dev \
+          libpng-dev \
+          libltc-dev \
+          libogg-dev \
+          libsoundtouch-dev \
+          libx11-dev \
+          libxext-dev \
+          libxi-dev \
+          libxrandr-dev \
+          libcwiid-dev
 
     - name: Cache Build
       uses: actions/cache@v4
