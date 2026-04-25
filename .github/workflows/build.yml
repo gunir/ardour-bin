@@ -82,7 +82,8 @@ jobs:
           libxext-dev \
           libxi-dev \
           libxrandr-dev \
-          libcwiid-dev
+          libcwiid-dev \
+          ccache
 
     - name: Cache Build
       uses: actions/cache@v4
@@ -92,22 +93,48 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-waf-
 
+    - name: Cache ccache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ccache
+        key: ${{ runner.os }}-ccache-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-
+
     - name: Configure
       run: |
+        export PATH="/usr/lib/ccache:$PATH"
         python3 ./waf configure --optimize --with-backends=alsa,dummy,jack --noconfirm
 
     - name: Build
       run: |
-        python3 ./waf build
+        export PATH="/usr/lib/ccache:$PATH"
+        python3 ./waf build -j$(nproc)
 
-    - name: Package (Partial)
+    - name: Install to local directory
+      run: |
+        python3 ./waf install --destdir=./install_root
+
+    - name: Prepare Artifact
       run: |
         mkdir -p output
-        # Find the built executable and copy it
-        find build/gtk2_ardour/ -maxdepth 1 -type f -name "ardour-*" -not -name "*.so" -executable -exec cp {} output/ardour-bin \;
-        
+        cp -r install_root/usr/local/* output/
+        # Create a compressed archive
+        tar -czf ardour-linux-x86_64.tar.gz -C output .
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ardour-linux-bin
-        path: output/
+        name: ardour-linux-bundle
+        path: ardour-linux-x86_64.tar.gz
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      with:
+        tag_name: latest
+        files: ardour-linux-x86_64.tar.gz
+        name: "Continuous Build"
+        body: "Automated build of Ardour (Andour) for Linux x86_64"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
