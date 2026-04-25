@@ -14,6 +14,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0 # Full history needed for 'git describe' versioning
+    - name: Ensure git tags exist
+      run: |
+        if [ -z "$(git tag)" ]; then
+          echo "No tags found, creating a dummy tag for versioning"
+          git tag -a 7.0-dummy -m "Dummy tag for CI versioning"
+        fi
 
     - name: Install dependencies
       run: |
