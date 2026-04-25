@@ -1,0 +1,86 @@
+name: Build Andour
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Full history needed for 'git describe' versioning
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          pkg-config \
+          python3 \
+          git \
+          libglib2.0-dev \
+          libglibmm-2.4-dev \
+          libsndfile1-dev \
+          libcurl4-gnutls-dev \
+          libarchive-dev \
+          liblo-dev \
+          libtag1-dev \
+          vamp-plugin-sdk \
+          librubberband-dev \
+          libfftw3-dev \
+          libxml2-dev \
+          libaubio-dev \
+          libasound2-dev \
+          libjack-jackd2-dev \
+          libpulse-dev \
+          libusb-1.0-0-dev \
+          libcppunit-dev \
+          itstool \
+          gettext \
+          libboost-dev \
+          libgtk2.0-dev \
+          libatk1.0-dev \
+          libpango1.0-dev \
+          libcairo2-dev \
+          liblrdf0-dev \
+          libsamplerate0-dev \
+          libwebsockets-dev \
+          libreadline-dev \
+          libpangomm-1.4-dev \
+          libcairomm-1.0-dev \
+          libsigc++-2.0-dev \
+          libfluidsynth-dev \
+          libudev-dev
+
+    - name: Cache Build
+      uses: actions/cache@v4
+      with:
+        path: build/
+        key: ${{ runner.os }}-waf-${{ hashFiles('wscript', '**/wscript') }}
+        restore-keys: |
+          ${{ runner.os }}-waf-
+
+    - name: Configure
+      run: |
+        python3 ./waf configure --optimize --with-backends=alsa,dummy,jack --noconfirm
+
+    - name: Build
+      run: |
+        python3 ./waf build
+
+    - name: Package (Partial)
+      run: |
+        mkdir -p output
+        # Find the built executable and copy it
+        find build/gtk2_ardour/ -maxdepth 1 -type f -name "ardour-*" -not -name "*.so" -executable -exec cp {} output/ardour-bin \;
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ardour-linux-bin
+        path: output/
